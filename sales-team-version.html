@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lubricool Lifetime Cost Calculator (Internal)</title>
+  <style>
+    :root {
+      --blue: #0067b1;
+      --deep-blue: #054b86;
+      --cyan: #10a4c8;
+      --yellow: #f5b700;
+      --navy: #12324a;
+      --ink: #101828;
+      --muted: #667085;
+      --line: #d0d5dd;
+      --surface: #ffffff;
+      --soft: #f3f7fb;
+      --row: #f8fbfd;
+      --row-alt: #eef5f9;
+      --danger: #f04438;
+      --success: #12b76a;
+      --shadow: 0 18px 50px rgba(16, 24, 40, 0.14);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #f6fafc 0%, #eef4f8 42%, #fff8e1 100%);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app-header {
+      background:
+        radial-gradient(circle at 4% 12%, rgba(245, 183, 0, 0.95) 0 5px, transparent 6px),
+        radial-gradient(circle at 6% 18%, rgba(245, 183, 0, 0.9) 0 5px, transparent 6px),
+        radial-gradient(circle at 9% 12%, rgba(245, 183, 0, 0.9) 0 5px, transparent 6px),
+        linear-gradient(120deg, var(--deep-blue), var(--blue) 58%, var(--cyan));
+      color: #fff;
+      padding: 32px clamp(18px, 5vw, 64px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app-header::before,
+    .app-header::after {
+      content: "";
+      position: absolute;
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      width: 310px;
+      height: 310px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .app-header::before {
+      left: -140px;
+      top: -180px;
+      box-shadow: 0 0 0 14px rgba(255, 255, 255, 0.05), 0 0 0 30px rgba(255, 255, 255, 0.04);
+    }
+
+    .app-header::after {
+      right: -120px;
+      bottom: -210px;
+      box-shadow: 0 0 0 14px rgba(255, 255, 255, 0.05), 0 0 0 30px rgba(255, 255, 255, 0.04);
+    }
+
+    .header-inner,
+    main {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 54px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 720px;
+      margin: 14px 0 0;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(15px, 1.7vw, 18px);
+      line-height: 1.5;
+    }
+
+    main {
+      padding: 28px clamp(16px, 4vw, 38px) 44px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid #b9c2d0;
+      border-radius: 6px;
+      min-height: 42px;
+      padding: 9px 11px;
+      background: #fff;
+      color: var(--ink);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(0, 103, 177, 0.16);
+    }
+
+    input[readonly],
+    select[disabled] {
+      background: #eef4f8;
+      color: #344054;
+      cursor: not-allowed;
+    }
+
+    .field-note {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.35;
+    }
+
+    .reset-button {
+      border: 1px solid #d0d5dd;
+      background: #fff;
+      color: var(--deep-blue);
+      border-radius: 6px;
+      min-height: 36px;
+      padding: 7px 11px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .reset-button:hover {
+      border-color: var(--deep-blue);
+      background: #eef6fc;
+    }
+
+    .primary-reset {
+      border-color: var(--deep-blue);
+      background: var(--deep-blue);
+      color: #fff;
+    }
+
+    .primary-reset:hover {
+      background: #073e6f;
+    }
+
+    .calculator-grid {
+      display: grid;
+      grid-template-columns: 0.95fr 1.25fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .input-panel,
+    .summary-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 12px 34px rgba(16, 24, 40, 0.08);
+      overflow: hidden;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--navy);
+      border-top: 5px solid var(--yellow);
+      padding: 13px 16px;
+    }
+
+    .panel-title {
+      margin: 0;
+      color: #fff;
+      font-size: 19px;
+      line-height: 1.2;
+    }
+
+    .product-editor {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .shared-editor {
+      background: #f7fbfe;
+    }
+
+    .product-editor:last-child {
+      border-bottom: 0;
+    }
+
+    .editor-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .editor-heading strong {
+      font-size: 17px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #063b63;
+      background: #d9eff8;
+      white-space: nowrap;
+    }
+
+    .pill.dark {
+      background: #e7edf3;
+      color: #344054;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .summary-panel {
+      display: grid;
+      gap: 0;
+    }
+
+    .comparison {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: clamp(14px, 1.6vw, 18px);
+    }
+
+    .comparison th,
+    .comparison td {
+      border: 1px solid #c4d0db;
+      padding: 13px 12px;
+      text-align: center;
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+    }
+
+    .comparison thead th {
+      background: var(--navy);
+      color: #fff;
+      font-size: clamp(16px, 2vw, 23px);
+    }
+
+    .comparison tbody tr:nth-child(odd) td {
+      background: var(--row);
+    }
+
+    .comparison tbody tr:nth-child(even) td {
+      background: var(--row-alt);
+    }
+
+    .comparison .label-col {
+      width: 31%;
+      font-weight: 700;
+      color: #222;
+    }
+
+    .highlight {
+      display: inline-block;
+      min-width: 118px;
+      padding: 7px 10px;
+      border-radius: 3px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .highlight.red {
+      background: #b42318;
+    }
+
+    .highlight.green {
+      background: #067647;
+    }
+
+    .savings-band {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border-top: 1px solid var(--line);
+    }
+
+    .metric {
+      background: var(--soft);
+      padding: 17px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .metric strong {
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1;
+    }
+
+    .metric.good strong {
+      color: #067647;
+    }
+
+    .formula-note {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .quote-note {
+      margin: 12px 0 0;
+      background: #fff8e1;
+      border: 1px solid #f5d46b;
+      border-radius: 8px;
+      color: #473a0a;
+      font-size: 14px;
+      line-height: 1.45;
+      padding: 13px 15px;
+    }
+
+    @media (max-width: 900px) {
+      .calculator-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .savings-band {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .fields {
+        grid-template-columns: 1fr;
+      }
+
+      .comparison {
+        font-size: 13px;
+      }
+
+      .comparison th,
+      .comparison td {
+        padding: 10px 7px;
+      }
+
+      .highlight {
+        min-width: 0;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <h1>Lubricool Lifetime Cost Calculator (Internal)</h1>
+      <p class="subtitle">Compare annual and total emulsion costs using concentrate price, dilution percentage, tank size, top-up usage, fill life and disposal cost.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="calculator-grid" aria-label="Cost calculator">
+      <div class="input-panel">
+        <div class="panel-heading">
+          <h2 class="panel-title">Inputs</h2>
+          <button class="reset-button" id="resetButton" type="button">Reset defaults</button>
+        </div>
+
+        <article class="product-editor shared-editor">
+          <div class="editor-heading">
+            <strong>Shared assumptions</strong>
+            <span class="pill dark">Applied to both products</span>
+          </div>
+          <div class="fields">
+            <label>
+              Currency
+              <select id="currencySymbol">
+                <option value="£" selected>GBP - British Pound (£)</option>
+                <option value="€">EUR - Euro (€)</option>
+                <option value="$">USD - US Dollar ($)</option>
+                <option value="C$">CAD - Canadian Dollar (C$)</option>
+                <option value="A$">AUD - Australian Dollar (A$)</option>
+                <option value="NZ$">NZD - New Zealand Dollar (NZ$)</option>
+                <option value="CHF ">CHF - Swiss Franc</option>
+                <option value="¥">JPY - Japanese Yen (¥)</option>
+                <option value="¥">CNY - Chinese Yuan (¥)</option>
+                <option value="HK$">HKD - Hong Kong Dollar (HK$)</option>
+                <option value="S$">SGD - Singapore Dollar (S$)</option>
+                <option value="₹">INR - Indian Rupee (₹)</option>
+                <option value="د.إ ">AED - UAE Dirham</option>
+                <option value="SAR ">SAR - Saudi Riyal</option>
+                <option value="R">ZAR - South African Rand (R)</option>
+                <option value="SEK ">SEK - Swedish Krona</option>
+                <option value="NOK ">NOK - Norwegian Krone</option>
+                <option value="DKK ">DKK - Danish Krone</option>
+                <option value="PLN ">PLN - Polish Zloty</option>
+                <option value="MX$">MXN - Mexican Peso (MX$)</option>
+                <option value="R$">BRL - Brazilian Real (R$)</option>
+              </select>
+            </label>
+            <label>
+              Tank size, litres
+              <input id="sharedTankSize" type="number" min="0" step="1" value="5000">
+            </label>
+            <label>
+              Disposal cost per litre
+              <input id="sharedDisposalCost" type="number" min="0" step="0.01" value="1.50">
+            </label>
+          </div>
+        </article>
+
+        <article class="product-editor shared-editor">
+          <div class="editor-heading">
+            <strong>Application</strong>
+            <span class="pill dark">Select first</span>
+          </div>
+          <div class="fields">
+            <label>
+              Application type
+              <select id="applicationTypeSelect">
+                <option value="Rod Breakdown (8mm input - 2mm output)" selected>Rod Breakdown (8mm input - 2mm output)</option>
+                <option value="Intermediate (3mm input - 1mm output)">Intermediate (3mm input - 1mm output)</option>
+                <option value="Fine/Superfine Wire (2mm input - &lt;0.5mm output)">Fine/Superfine Wire (2mm input - &lt;0.5mm output)</option>
+                <option value="Multiwire (3mm input - 0.1mm output)">Multiwire (3mm input - 0.1mm output)</option>
+                <option value="Annealing">Annealing</option>
+              </select>
+            </label>
+          </div>
+        </article>
+
+        <article class="product-editor">
+          <div class="editor-heading">
+            <strong>Lubricool Product</strong>
+            <span class="pill">Recommended</span>
+          </div>
+          <div class="fields">
+            <label>
+              Lubricool product
+              <select data-product="a" data-field="name" id="metalubeProductSelect">
+                <optgroup label="Lubricool">
+                  <option value="Lubricool 910" selected>Lubricool 910</option>
+                  <option value="Lubricool 22G">Lubricool 22G</option>
+                  <option value="Lubricool 11">Lubricool 11</option>
+                  <option value="Lubricool 44N">Lubricool 44N</option>
+                </optgroup>
+              </select>
+            </label>
+            <label>
+              Barrel cost (205 litres)
+              <input data-product="a" data-field="barrelCost" type="number" min="0" step="1" value="1070">
+            </label>
+            <label>
+              Emulsion strength, %
+              <input data-product="a" data-field="dilutionPercent" type="number" min="0" max="100" step="0.1" value="10">
+              <span class="field-note">Enter 10 for 10%. Example: a 5,000L tank at 10% uses 500L concentrate.</span>
+            </label>
+            <label>
+              Top-up rate per month, litres
+              <input data-product="a" data-field="topUpMixedLitres" type="number" min="0" step="1" value="1000">
+            </label>
+            <label>
+              Fill life, years
+              <input data-product="a" data-field="fillLife" type="number" min="0.1" step="0.1" value="4">
+            </label>
+          </div>
+        </article>
+
+        <article class="product-editor">
+          <div class="editor-heading">
+            <strong>Your Product</strong>
+            <span class="pill dark">Current product</span>
+          </div>
+          <div class="fields">
+            <label>
+              Product name
+              <input data-product="b" data-field="name" type="text" value="Your current product">
+            </label>
+            <label>
+              Barrel cost (205 litres)
+              <input data-product="b" data-field="barrelCost" type="number" min="0" step="1" value="1000">
+            </label>
+            <label>
+              Emulsion strength, %
+              <input data-product="b" data-field="dilutionPercent" type="number" min="0" max="100" step="0.1" value="15">
+              <span class="field-note">Enter 10 for 10%. Use the customer's current concentration percentage.</span>
+            </label>
+            <label>
+              Top-up rate per month, litres
+              <input data-product="b" data-field="topUpMixedLitres" type="number" min="0" step="1" value="1000">
+            </label>
+            <label>
+              Fill life, years
+              <input data-product="b" data-field="fillLife" type="number" min="0.1" step="0.1" value="3">
+            </label>
+          </div>
+        </article>
+      </div>
+
+      <div class="summary-panel">
+        <div class="panel-heading">
+          <h2 class="panel-title" id="summaryTitle">Lubricool Product vs Current Product</h2>
+        </div>
+        <table class="comparison">
+          <thead>
+            <tr>
+              <th></th>
+              <th id="nameA">Lubricool 910</th>
+              <th id="nameB">Your current product</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="label-col">Barrel cost (205 litres)</td>
+              <td id="barrelCostA"></td>
+              <td id="barrelCostB"></td>
+            </tr>
+            <tr>
+              <td class="label-col">Tank size</td>
+              <td id="tankSizeA"></td>
+              <td id="tankSizeB"></td>
+            </tr>
+            <tr>
+              <td class="label-col">Emulsion strength, %</td>
+              <td id="dilutionA"></td>
+              <td id="dilutionB"></td>
+            </tr>
+            <tr>
+              <td class="label-col">Initial concentrate required</td>
+              <td id="initialConcentrateA"></td>
+              <td id="initialConcentrateB"></td>
+            </tr>
+            <tr>
+              <td class="label-col">Mixed top-up usage</td>
+              <td id="topUpRateA"></td>
+              <td id="topUpRateB"></td>
+            </tr>
+            <tr>
+              <td class="label-col">Fill life</td>
+              <td id="fillLifeA"></td>
+              <td id="fillLifeB"></td>
+            </tr>
+            <tr>
+              <td class="label-col">Disposal cost</td>
+              <td id="disposalCostA"></td>
+              <td id="disposalCostB"></td>
+            </tr>
+            <tr>
+              <td class="label-col">Total cost</td>
+              <td id="totalCostA"></td>
+              <td id="totalCostB"></td>
+            </tr>
+            <tr>
+              <td class="label-col">Per year cost</td>
+              <td><span class="highlight green" id="annualCostA"></span></td>
+              <td><span class="highlight red" id="annualCostB"></span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="savings-band">
+          <div class="metric good">
+            <span>Annual saving with Lubricool</span>
+            <strong id="annualSaving"></strong>
+          </div>
+          <div class="metric good">
+            <span>Lifetime saving with Lubricool</span>
+            <strong id="lifetimeSaving"></strong>
+          </div>
+          <div class="metric">
+            <span>Annual saving percentage vs current product</span>
+            <strong id="savingPercentage"></strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="formula-note">
+      Formula used: concentrate litres = tank size x emulsion strength. Product cost is based on concentrate only; disposal cost is based on the full tank volume.
+    </p>
+    <p class="quote-note">
+      This calculator is for indicative comparison only. For true Lubricool product costs, concentration guidance and customer-specific pricing, please speak to the commercial management team for a formal quote.
+    </p>
+  </main>
+
+  <script>
+    const applicationProductOptions = {
+      "Rod Breakdown (8mm input - 2mm output)": [
+        { name: "Lubricool 910", strength: "11" },
+        { name: "Lubricool 22G", strength: "13" },
+        { name: "Lubricool 11", strength: "13" },
+        { name: "Lubricool 44N", strength: "13" }
+      ],
+      "Intermediate (3mm input - 1mm output)": [
+        { name: "Lubricool 960", strength: "9" }
+      ],
+      "Fine/Superfine Wire (2mm input - <0.5mm output)": [
+        { name: "Lubricool 960", strength: "6" },
+        { name: "Lubricool 250B", strength: "5" },
+        { name: "Lubricool 255B", strength: "5" }
+      ],
+      "Multiwire (3mm input - 0.1mm output)": [
+        { name: "Lubricool 955", strength: "5" },
+        { name: "Lubricool 318", strength: "6" },
+        { name: "Lubricool 450", strength: "5" }
+      ],
+      "Annealing": [
+        { name: "Lubricool AC", strength: "1" }
+      ]
+    };
+
+    const defaults = {
+      currencySymbol: "\u00a3",
+      tankSize: "5000",
+      disposalCost: "1.50",
+      applicationType: "Rod Breakdown (8mm input - 2mm output)",
+      a: {
+        name: "Lubricool 910",
+        barrelCost: "1070",
+        dilutionPercent: "11",
+        topUpMixedLitres: "1000",
+        fillLife: "4"
+      },
+      b: {
+        name: "Your current product",
+        barrelCost: "1000",
+        dilutionPercent: "15",
+        topUpMixedLitres: "1000",
+        fillLife: "3"
+      }
+    };
+
+    const barrelLitres = 205;
+
+    const sharedInputs = {
+      currencySymbol: document.getElementById("currencySymbol"),
+      tankSize: document.getElementById("sharedTankSize"),
+      disposalCost: document.getElementById("sharedDisposalCost"),
+      applicationType: document.getElementById("applicationTypeSelect")
+    };
+
+    let lastApplicationType = "";
+    let lastLubricoolProduct = "";
+
+    const outputIds = [
+      "nameA", "nameB", "barrelCostA", "barrelCostB", "tankSizeA", "tankSizeB",
+      "dilutionA", "dilutionB", "initialConcentrateA", "initialConcentrateB",
+      "topUpRateA", "topUpRateB", "fillLifeA", "fillLifeB", "disposalCostA",
+      "disposalCostB", "totalCostA", "totalCostB", "annualCostA", "annualCostB",
+      "annualSaving", "lifetimeSaving", "savingPercentage", "summaryTitle"
+    ];
+
+    const outputs = Object.fromEntries(outputIds.map((id) => [id, document.getElementById(id)]));
+
+    function numberFromInput(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function currency(value, rounding = "nearest") {
+      const symbol = sharedInputs.currencySymbol.value || "\u00a3";
+      const rounded = rounding === "down" ? Math.floor(value) : Math.round(value);
+      return `${symbol}${rounded.toLocaleString("en-GB")}`;
+    }
+
+    function annualCurrency(value) {
+      const symbol = sharedInputs.currencySymbol.value || "\u00a3";
+      const rounded = Math.round(value / 10) * 10;
+      return `${symbol}${rounded.toLocaleString("en-GB")}`;
+    }
+
+    function rateCurrency(value) {
+      const symbol = sharedInputs.currencySymbol.value || "\u00a3";
+      return `${symbol}${value.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function syncLubricoolProduct() {
+      const applicationSelect = document.getElementById("applicationTypeSelect");
+      const lubricoolSelect = document.getElementById("metalubeProductSelect");
+      const emulsionInput = document.querySelector('[data-product="a"][data-field="dilutionPercent"]');
+      const options = applicationProductOptions[applicationSelect.value] || applicationProductOptions["Rod Breakdown (8mm input - 2mm output)"];
+      const existingProduct = lubricoolSelect.value;
+      const applicationChanged = applicationSelect.value !== lastApplicationType;
+
+      if (applicationChanged) {
+        lubricoolSelect.innerHTML = "";
+        const group = document.createElement("optgroup");
+        group.label = "Lubricool";
+        options.forEach((product) => {
+          const option = document.createElement("option");
+          option.value = product.name;
+          option.textContent = product.name;
+          group.appendChild(option);
+        });
+        lubricoolSelect.appendChild(group);
+        lubricoolSelect.value = options.some((product) => product.name === existingProduct)
+          ? existingProduct
+          : options[0].name;
+        lastApplicationType = applicationSelect.value;
+      }
+
+      const selectedProduct = options.find((product) => product.name === lubricoolSelect.value) || options[0];
+      if (applicationChanged || selectedProduct.name !== lastLubricoolProduct) {
+        emulsionInput.value = selectedProduct.strength;
+        lastLubricoolProduct = selectedProduct.name;
+      }
+    }
+
+    function readProduct(key) {
+      const fields = {};
+      document.querySelectorAll(`[data-product="${key}"]`).forEach((input) => {
+        fields[input.dataset.field] = input.value;
+      });
+
+      return {
+        name: fields.name || key.toUpperCase(),
+        barrelCost: numberFromInput(fields.barrelCost),
+        tankSize: numberFromInput(sharedInputs.tankSize.value),
+        dilutionPercent: numberFromInput(fields.dilutionPercent),
+        topUpMixedLitres: numberFromInput(fields.topUpMixedLitres),
+        fillLife: numberFromInput(fields.fillLife),
+        disposalCost: numberFromInput(sharedInputs.disposalCost.value)
+      };
+    }
+
+    function calculate(product, barrelLitres) {
+      const concentration = product.dilutionPercent / 100;
+      const initialConcentrateLitres = product.tankSize * concentration;
+      const initialConcentrateBarrels = barrelLitres > 0 ? initialConcentrateLitres / barrelLitres : 0;
+      const monthlyTopUpConcentrateLitres = product.topUpMixedLitres * concentration;
+      const monthlyTopUpConcentrateBarrels = barrelLitres > 0 ? monthlyTopUpConcentrateLitres / barrelLitres : 0;
+      const initialFill = initialConcentrateBarrels * product.barrelCost;
+      const topUp = monthlyTopUpConcentrateBarrels * 12 * product.fillLife * product.barrelCost;
+      const disposal = product.tankSize * product.disposalCost;
+      const total = initialFill + topUp + disposal;
+      const annual = product.fillLife > 0 ? total / product.fillLife : 0;
+
+      return {
+        initialConcentrateLitres,
+        initialConcentrateBarrels,
+        monthlyTopUpConcentrateLitres,
+        monthlyTopUpConcentrateBarrels,
+        initialFill,
+        topUp,
+        disposal,
+        total,
+        annual
+      };
+    }
+
+    function litreText(value) {
+      return `${Math.round(value).toLocaleString("en-GB")}L`;
+    }
+
+    function mixedTopUpText(product, result) {
+      return `${litreText(product.topUpMixedLitres)} mixed emulsion/month (${litreText(result.monthlyTopUpConcentrateLitres)} concentrate)`;
+    }
+
+    function update() {
+      syncLubricoolProduct();
+      const productA = readProduct("a");
+      const productB = readProduct("b");
+      const resultA = calculate(productA, barrelLitres);
+      const resultB = calculate(productB, barrelLitres);
+      const annualSaving = resultB.annual - resultA.annual;
+      const lifetimeSaving = annualSaving * productA.fillLife;
+      const savingPercentage = resultB.annual > 0 ? (annualSaving / resultB.annual) * 100 : 0;
+
+      outputs.summaryTitle.textContent = "Lubricool Product vs Current Product";
+      outputs.nameA.textContent = productA.name;
+      outputs.nameB.textContent = productB.name;
+      outputs.barrelCostA.textContent = currency(productA.barrelCost);
+      outputs.barrelCostB.textContent = currency(productB.barrelCost);
+      outputs.tankSizeA.textContent = `${productA.tankSize.toLocaleString("en-GB")}L`;
+      outputs.tankSizeB.textContent = `${productB.tankSize.toLocaleString("en-GB")}L`;
+      outputs.dilutionA.textContent = `${productA.dilutionPercent.toLocaleString("en-GB")}%`;
+      outputs.dilutionB.textContent = `${productB.dilutionPercent.toLocaleString("en-GB")}%`;
+      outputs.initialConcentrateA.textContent = `${litreText(resultA.initialConcentrateLitres)} (${resultA.initialConcentrateBarrels.toFixed(2)} barrels)`;
+      outputs.initialConcentrateB.textContent = `${litreText(resultB.initialConcentrateLitres)} (${resultB.initialConcentrateBarrels.toFixed(2)} barrels)`;
+      outputs.topUpRateA.textContent = mixedTopUpText(productA, resultA);
+      outputs.topUpRateB.textContent = mixedTopUpText(productB, resultB);
+      outputs.fillLifeA.textContent = `${productA.fillLife.toLocaleString("en-GB")} years`;
+      outputs.fillLifeB.textContent = `${productB.fillLife.toLocaleString("en-GB")} years`;
+      outputs.disposalCostA.textContent = `${rateCurrency(productA.disposalCost)}/litre`;
+      outputs.disposalCostB.textContent = `${rateCurrency(productB.disposalCost)}/litre`;
+      outputs.totalCostA.textContent = currency(resultA.total, "down");
+      outputs.totalCostB.textContent = currency(resultB.total, "down");
+      outputs.annualCostA.textContent = annualCurrency(resultA.annual);
+      outputs.annualCostB.textContent = annualCurrency(resultB.annual);
+      outputs.annualSaving.textContent = annualCurrency(annualSaving);
+      outputs.lifetimeSaving.textContent = currency(lifetimeSaving);
+      outputs.savingPercentage.textContent = `${Math.round(savingPercentage)}%`;
+
+      outputs.annualSaving.parentElement.classList.toggle("good", annualSaving >= 0);
+      outputs.lifetimeSaving.parentElement.classList.toggle("good", lifetimeSaving >= 0);
+    }
+
+    function resetDefaults() {
+      sharedInputs.currencySymbol.value = defaults.currencySymbol;
+      sharedInputs.tankSize.value = defaults.tankSize;
+      sharedInputs.disposalCost.value = defaults.disposalCost;
+      sharedInputs.applicationType.value = defaults.applicationType;
+      lastApplicationType = "";
+      lastLubricoolProduct = "";
+
+      ["a", "b"].forEach((productKey) => {
+        document.querySelectorAll(`[data-product="${productKey}"]`).forEach((input) => {
+          input.value = defaults[productKey][input.dataset.field];
+        });
+      });
+
+      update();
+    }
+
+    document.querySelectorAll("input, select").forEach((input) => {
+      input.addEventListener("input", update);
+      input.addEventListener("change", update);
+    });
+
+    document.getElementById("resetButton").addEventListener("click", resetDefaults);
+
+    update();
+  </script>
+</body>
+</html>

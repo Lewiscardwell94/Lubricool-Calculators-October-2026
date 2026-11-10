@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lubricool Lifetime Cost Calculator</title>
+  <style>
+    :root {
+      --blue: #0067b1;
+      --deep-blue: #054b86;
+      --cyan: #10a4c8;
+      --yellow: #f5b700;
+      --navy: #12324a;
+      --ink: #101828;
+      --muted: #667085;
+      --line: #d0d5dd;
+      --surface: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f6fafc 0%, #eef4f8 48%, #fff8e1 100%);
+      color: var(--ink);
+    }
+
+    header {
+      background: linear-gradient(120deg, var(--deep-blue), var(--blue) 58%, var(--cyan));
+      color: #fff;
+      padding: 34px clamp(18px, 5vw, 64px);
+    }
+
+    .inner {
+      width: min(980px, 100%);
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 52px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 720px;
+      margin: 14px 0 0;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    main {
+      padding: 28px clamp(16px, 4vw, 38px) 44px;
+    }
+
+    .version-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .version-card {
+      display: grid;
+      gap: 14px;
+      min-height: 220px;
+      padding: 22px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 12px 34px rgba(16, 24, 40, 0.08);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .version-card:hover {
+      border-color: var(--blue);
+      box-shadow: 0 16px 42px rgba(16, 24, 40, 0.13);
+    }
+
+    .version-card strong {
+      color: var(--navy);
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .version-card span {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .pill {
+      justify-self: start;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #063b63;
+      background: #d9eff8;
+    }
+
+    .pill.dark {
+      background: #e7edf3;
+      color: #344054;
+    }
+
+    .note {
+      margin: 18px 0 0;
+      background: #fff8e1;
+      border: 1px solid #f5d46b;
+      border-radius: 8px;
+      color: #473a0a;
+      font-size: 14px;
+      line-height: 1.45;
+      padding: 13px 15px;
+    }
+
+    @media (max-width: 720px) {
+      .version-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="inner">
+      <h1>Lubricool Lifetime Cost Calculator</h1>
+      <p class="subtitle">Choose the calculator version you need.</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="inner">
+      <section class="version-grid" aria-label="Calculator versions">
+        <a class="version-card" href="website-version.html">
+          <span class="pill">Website</span>
+          <strong>Website Version</strong>
+          <span>Public-facing version using indicative Lubricool pricing calculated at 20% above the current product barrel price.</span>
+        </a>
+
+        <a class="version-card" href="sales-team-version.html">
+          <span class="pill dark">Sales Team</span>
+          <strong>Sales Team Version</strong>
+          <span>Internal version where the team can enter a customer-specific quoted Lubricool barrel price manually.</span>
+        </a>
+      </section>
+
+      <p class="note">
+        If this is hosted on a public GitHub Pages site, both versions can be accessed by anyone with the links. Use a private repository or controlled internal sharing if the sales team version should remain internal.
+      </p>
+    </div>
+  </main>
+</body>
+</html>
